@@ -1,0 +1,66 @@
+all:
+  vars:
+    ansible_user: admin
+    ansible_become: true
+    ansible_ssh_private_key_file: ~/.ssh/admin
+
+
+
+all:
+  children:
+
+    routers:
+      hosts:
+        external-router:
+          ansible_host: 192.168.101.185
+
+        internal-router:
+          ansible_host: 10.0.0.3
+
+    mgmt:
+      hosts:
+
+        jumphost:
+          ansible_host: 10.0.99.2
+
+        prometheus-server:
+          ansible_host: 10.0.99.3
+#          ansible_user: mgmt
+
+        jenkins-server:
+          ansible_host: 10.0.99.4
+#          ansible_user: aleksander
+
+        jenkins-worker:
+          ansible_host: 10.0.99.5
+ #         ansible_user: aleksander
+
+        prometheus-agent-mgmt:
+          ansible_host: 10.0.99.12
+
+    lan:
+      hosts:
+
+        desktop1:
+          ansible_host: 10.0.10.5
+
+        desktop2:
+          ansible_host: 10.0.10.3
+
+        backup-server:
+          ansible_host: 10.0.10.11
+
+        monitoring-agent-lan:
+          ansible_host: 10.0.10.12
+
+    dmz:
+      hosts:
+
+        web1:
+          ansible_host: 10.0.20.2
+
+        web2:
+          ansible_host: 10.0.20.3
+
+        monitoring-agent-dmz:
+          ansible_host: 10.0.20.12

@@ -28,15 +28,23 @@ networks:
   - LAN: 
       desktop1: 
         10.0.10.5 
+        ssh_user:
+          aleksander
       desktop2: 
         10.0.10.3 
+        ssh_user:
+          aleksander  
       backup-server: 
-        10.0.10.11 
+        10.0.10.11
+        ssh_user: 
+          aleksander
       monitoring agent: 
       10.0.10.12 
   - DMZ: 
-      web1: 10.0.20.2 
-      web2: 10.0.20.3 
-      web3: 10.0.20.4
+      web1: 
+        10.0.20.2 
+      web2: 
+        10.0.20.3 
+      web3: 
+        10.0.20.4
       monitoring agent: 10.0.20.12
-
