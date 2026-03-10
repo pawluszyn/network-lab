@@ -1,0 +1,51 @@
+- name: bootstrap servers for automation
+  hosts: all
+  become: true
+
+  vars: 
+    devops_user: devops
+  tasks:
+  
+    - name: Ensure devops user exists
+      user:
+        name: "{{ devops_user }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+    - name: create SSH directory 
+      file:
+        path: "/home/{{ devops_user }}/.ssh"
+        state: directory
+        owner: "{{ devops_user }}"
+        group: "{{ devops_user }}"
+        mode: "0700"
+    - name: Install authorized key 
+      authorized_key:
+        user: "{{ devops_user }}"
+        key: "{{ lookup('file', '~/.ssh/admin.pub') }}"
+    - name: Ensure sudo package exists
+      package:
+        name: sudo
+        state: present
+    - name: Allow passwordless sudo
+      copy:
+        dest: "/etc/sudoers.d/devops"
+        content: "devops ALL=(ALL) NOPASSWD:ALL"
+        mode: "0440"
+    - name: Disable SSH password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+    - name: Restart SSH
+      service: 
+        name: ssh
+        state: restarted
+
