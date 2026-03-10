@@ -1,0 +1,73 @@
+flowchart TB
+
+%% INTERNET EDGE
+Internet((Internet))
+Internet --> ISP[ISP Router<br>192.168.101.1]
+
+ISP --> FW[Edge Firewall<br>router-fw<br>NAT / VPN / Port Forward<br>192.168.101.185<br>10.0.99.1]
+
+FW --> CoreR[Core Router<br>L3 Routing<br>10.0.99.3]
+
+%% CORE NETWORK SPLIT
+CoreR --> MgmtSW[MGMT Switch<br>10.0.99.0/24]
+CoreR --> LANSW[LAN Switch<br>10.0.10.0/24]
+CoreR --> DMZSW[DMZ Switch<br>10.0.20.0/24]
+
+%% MGMT NETWORK
+subgraph MGMT_VMs["MGMT VM Layer (Proxmox VMs)"]
+    Jump[Jumphost<br>10.0.99.2<br>SSH / Ansible]
+    JenkinsMaster[Jenkins Master<br>10.0.99.4]
+    JenkinsWorker[Jenkins Worker<br>10.0.99.5]
+    MonCore[Monitoring Core<br>Prometheus + Grafana<br>10.0.99.10]
+    Backup[Backup Server<br>Restic / Borg<br>10.0.99.20]
+    MgmtAgent[Prometheus Agent<br>MGMT Zone<br>10.0.99.12]
+end
+MgmtSW --> MGMT_VMs
+
+%% LAN NETWORK
+subgraph LAN_VMs["LAN VM Layer (Proxmox VMs)"]
+    App1[App Server 1<br>10.0.10.2]
+    App2[App Server 2<br>10.0.10.3]
+    DB[(Database Server<br>10.0.10.11)]
+    LANAgent[Prometheus Agent<br>LAN Zone<br>10.0.10.12]
+end
+LANSW --> LAN_VMs
+
+%% DMZ NETWORK
+subgraph DMZ_VMs["DMZ VM Layer (Proxmox VMs)"]
+    Web1[Web Server<br>10.0.20.2]
+    Web2[Web Server<br>10.0.20.3]
+    DMZAgent[Prometheus Agent<br>DMZ Zone<br>10.0.20.12]
+end
+DMZSW --> DMZ_VMs
+
+%% SSH / Management Flows
+Jump --> App1
+Jump --> App2
+Jump --> DB
+Jump --> Web1
+Jump --> Web2
+Jump --> JenkinsMaster
+Jump --> JenkinsWorker
+Jump --> MonCore
+Jump --> Backup
+
+%% Monitoring Flows
+LANAgent --> MonCore
+DMZAgent --> MonCore
+MgmtAgent --> MonCore
+
+%% Jenkins Build Flows
+JenkinsMaster --> JenkinsWorker
+JenkinsMaster --> App1
+JenkinsMaster --> App2
+JenkinsMaster --> Web1
+JenkinsMaster --> Web2
+
+%% Backup Flows
+Backup --> App1
+Backup --> App2
+Backup --> DB
+Backup --> JenkinsMaster
+Backup --> JenkinsWorker
+
