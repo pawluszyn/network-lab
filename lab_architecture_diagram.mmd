@@ -1,0 +1,59 @@
+flowchart TD
+
+%% Internet
+Internet[(Internet)]
+
+%% Routers
+subgraph Routers
+    ER[external-router\n192.168.101.185 internet\n10.0.0.1 transit]
+    IR[internal-router\n10.0.0.3 transit\n10.0.10.1 LAN\n10.0.20.1 DMZ\n10.0.99.1 MGMT]
+end
+
+%% Transit
+subgraph Transit Network
+    Transit[10.0.0.0/24]
+end
+
+%% MGMT
+subgraph MGMT Network
+    Jumphost[jumphost\n10.0.99.2]
+    PrometheusServer[prometheus-server\n10.0.99.3]
+    JenkinsServer[jenkins-server\n10.0.99.4]
+    JenkinsWorker[jenkins-worker\n10.0.99.5]
+    PromAgentMgmt[prometheus-agent\n10.0.99.12]
+end
+
+%% LAN
+subgraph LAN Network
+    Desktop1[desktop1\n10.0.10.5]
+    Desktop2[desktop2\n10.0.10.3]
+    BackupServer[backup-server\n10.0.10.11]
+    MonitoringAgentLAN[monitoring-agent\n10.0.10.12]
+end
+
+%% DMZ
+subgraph DMZ Network
+    Web1[web1\n10.0.20.2]
+    Web2[web2\n10.0.20.3]
+    MonitoringAgentDMZ[monitoring-agent\n10.0.20.12]
+end
+
+%% Connections
+Internet --> ER
+ER --> Transit
+Transit --> IR
+
+IR --> Jumphost
+IR --> PrometheusServer
+IR --> JenkinsServer
+IR --> JenkinsWorker
+IR --> PromAgentMgmt
+
+IR --> Desktop1
+IR --> Desktop2
+IR --> BackupServer
+IR --> MonitoringAgentLAN
+
+IR --> Web1
+IR --> Web2
+IR --> MonitoringAgentDMZ

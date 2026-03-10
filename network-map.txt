@@ -1,0 +1,42 @@
+routers: 
+  - external-router:
+      192.168.101.185 internet 
+      10.0.0.1 transit network 
+  - internal-router: 
+      10.0.0.3 transit network 
+      10.0.10.1 LAN 
+      10.0.20.1 DMZ 
+      10.0.99.1 MGMT 
+networks: 
+  - MGMT: 
+      jumphost: 
+        10.0.99.2 
+      Prometheus server: 
+        10.0.99.3 
+        ssh_user: 
+          mgmt 
+      Jenkins server: 
+        10.0.99.4 
+        ssh_user:
+          aleksander 
+      Jenkins worker: 
+        10.0.99.5 
+        ssh_user: 
+          aleksander 
+      Prometheus agent: 
+        10.0.99.12 
+  - LAN: 
+      desktop1: 
+        10.0.10.5 
+      desktop2: 
+        10.0.10.3 
+      backup-server: 
+        10.0.10.11 
+      monitoring agent: 
+      10.0.10.12 
+  - DMZ: 
+      web1: 10.0.20.2 
+      web2: 10.0.20.3 
+      web3: 10.0.20.4
+      monitoring agent: 10.0.20.12
+
