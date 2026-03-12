@@ -1,0 +1,96 @@
+- name: Install Prometheus proxy collector on Alpine
+  hosts: monitoring-proxies
+  become: true
+
+  vars:
+    prometheus_version: "2.51.0"
+
+  tasks:
+
+  - name: Install required packages
+    apk:
+      name:
+        - curl
+        - tar
+      state: present
+
+  - name: Create prometheus group
+    group:
+      name: prometheus
+      system: yes
+
+  - name: Create prometheus user
+    user:
+      name: prometheus
+      group: prometheus
+      system: yes
+      shell: /sbin/nologin
+
+  - name: Create directories
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: prometheus
+      group: prometheus
+      mode: "0755"
+    loop:
+      - /etc/prometheus
+      - /var/lib/prometheus
+
+  - name: Download Prometheus
+    get_url:
+      url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+      dest: /tmp/prometheus.tar.gz
+
+  - name: Extract Prometheus
+    unarchive:
+      src: /tmp/prometheus.tar.gz
+      dest: /tmp
+      remote_src: yes
+
+  - name: Install binaries
+    copy:
+      src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+      dest: "/usr/local/bin/{{ item }}"
+      mode: "0755"
+      remote_src: yes
+    loop:
+      - prometheus
+      - promtool
+
+  - name: Install Prometheus configuration
+    template:
+      src: prometheus-proxy.yml.j2
+      dest: /etc/prometheus/prometheus.yml
+      owner: prometheus
+      group: prometheus
+      mode: "0644"
+
+  - name: Create OpenRC service
+    copy:
+      dest: /etc/init.d/prometheus
+      mode: "0755"
+      content: |
+        #!/sbin/openrc-run
+
+        name="Prometheus"
+        description="Prometheus subnet collector"
+
+        command="/usr/local/bin/prometheus"
+        command_args="--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/var/lib/prometheus --web.listen-address=:9090"
+
+        command_user="prometheus:prometheus"
+        command_background=true
+        pidfile="/run/prometheus.pid"
+
+        supervisor=supervise-daemon
+
+        depend() {
+            need net
+        }
+
+  - name: Enable service
+    command: rc-update add prometheus default
+
+  - name: Start service
+    command: rc-service prometheus start

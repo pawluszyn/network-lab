@@ -8,16 +8,25 @@ lan:
       ansible_host: 10.0.10.5
     desktop2:
       ansible_host: 10.0.10.3
-    monitoring-agent:
+    monitoring-lan:
       ansible_host: 10.0.10.12
+      ansible_user: mgmt
+      subnet_group: lan
     backup-server:
       ansible_host: 10.0.10.11
+
 
 dmz: 
   hosts:
     web1:
       ansible_host: 10.0.20.2
       ansible_user: root
+    monitoring-dmz:
+      ansible_host: 10.0.20.12
+      ansible_user: mgmt
+      subnet_group: dmz
+
+
 
 mgmt:
   hosts:
@@ -25,6 +34,17 @@ mgmt:
       ansible_host: 10.0.99.4
     jenkins-worker:
       ansible_host: 10.0.99.5
-    monitoring_server:
+    monitoring-mgmt:
+      ansible_host: 10.0.99.12
+      ansible_user: mgmt
+      subnet_group: mgmt
+    monitoring-server:
       ansible_host: 10.0.99.3
       ansible_user: mgmt
+
+monitoring-proxies:
+  hosts:
+    monitoring-mgmt:
+    monitoring-dmz:
+    monitoring-lan:
+

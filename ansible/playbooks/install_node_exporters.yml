@@ -1,0 +1,99 @@
+- name: Install Prometheus Node Exporter
+  hosts: all,!monitoring
+  become: true
+
+  vars:
+    node_exporter_version: "1.10.2"
+
+  tasks:
+
+    - name: Download Node Exporter
+      get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+        dest: /tmp/node_exporter.tar.gz
+
+    - name: Extract archive
+      unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /tmp
+        remote_src: yes
+
+    - name: Install binary
+      copy:
+        src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+        dest: /usr/local/bin/node_exporter
+        mode: "0755"
+        remote_src: yes
+
+    - name: Create node_exporter user
+      user:
+        name: node_exporter
+        system: yes
+        shell: /sbin/nologin
+
+    - name: Create node_exporter group
+      group:
+        name: node_exporter
+        system: yes
+
+############################################################
+# SYSTEMD HOSTS
+############################################################
+
+    - name: Create systemd service
+      when: ansible_service_mgr == "systemd"
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Prometheus Node Exporter
+          After=network.target
+
+          [Service]
+          User=node_exporter
+          Group=node_exporter
+          ExecStart=/usr/local/bin/node_exporter
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable systemd service
+      when: ansible_service_mgr == "systemd"
+      systemd:
+        name: node_exporter
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+############################################################
+# ALPINE / OPENRC HOSTS
+############################################################
+
+    - name: Create OpenRC service
+      when: ansible_service_mgr == "openrc"
+      copy:
+        dest: /etc/init.d/node_exporter
+        mode: "0755"
+        content: |
+          #!/sbin/openrc-run
+
+          name="node_exporter"
+          description="Prometheus Node Exporter"
+
+          command="/usr/local/bin/node_exporter"
+          command_user="node_exporter:node_exporter"
+          command_background="true"
+          pidfile="/run/node_exporter.pid"
+
+          depend() {
+              need net
+          }
+
+    - name: Enable OpenRC service
+      when: ansible_service_mgr == "openrc"
+      command: rc-update add node_exporter default
+
+    - name: Start OpenRC service
+      when: ansible_service_mgr == "openrc"
+      command: rc-service node_exporter start   
+
